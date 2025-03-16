@@ -4,7 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup, Circle } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import "./LocationForm.css";
-import { sendTestNotification } from "../utils/sendSMS";
+import { sendNotification } from "../utils/sendSMS";
 
 // Define a custom Leaflet icon
 const defaultIcon = new L.Icon({
@@ -26,6 +26,8 @@ const LocationForm: React.FC = () => {
     radius: 100,
     silence: false,
     message: "",
+    messageSent: false,
+    phoneNumbers: "",
   });
 
   const [locations, setLocations] = useState<any[]>([]);
@@ -134,11 +136,25 @@ const LocationForm: React.FC = () => {
         loc.longitude
       );
       
-      if (distance <= loc.radius && loc.message && !loc.messageSent) {
-        sendTestNotification();
-        loc.messageSent = true;
-        localStorage.setItem("locations", JSON.stringify(locations));
+      if (distance <= loc.radius && loc.message && !loc.messageSent && loc.phoneNumbers) {
+        // Split phone numbers and clean them
+        const phoneNumberList = loc.phoneNumbers
+          .split(',')
+          .map(num => num.trim())
+          .filter(num => num);
+
+        // Send notification when entering zone
+        if (phoneNumberList.length > 0) {
+          sendNotification(
+            loc.message,
+            `Entered ${loc.address || 'Geofence Zone'}`,
+            phoneNumberList
+          );
+          loc.messageSent = true;
+          localStorage.setItem("locations", JSON.stringify(locations));
+        }
       } else if (distance > loc.radius && loc.messageSent) {
+        // Reset message sent flag when leaving zone
         loc.messageSent = false;
         localStorage.setItem("locations", JSON.stringify(locations));
       }
@@ -157,9 +173,26 @@ const LocationForm: React.FC = () => {
       return;
     }
 
+    if (!location.phoneNumbers) {
+      setError("Please enter at least one phone number");
+      return;
+    }
+
+    // Validate phone numbers
+    const phoneNumberList = location.phoneNumbers
+      .split(',')
+      .map(num => num.trim())
+      .filter(num => num);
+
+    if (phoneNumberList.length === 0) {
+      setError("Please enter valid phone numbers");
+      return;
+    }
+
     const newLocation = { 
       ...location,
-      messageSent: false
+      messageSent: false,
+      phoneNumbers: phoneNumberList.join(', ') // Store cleaned phone numbers
     };
     const updatedLocations = [...locations, newLocation];
 
@@ -176,15 +209,52 @@ const LocationForm: React.FC = () => {
   // Test notification function
   const testNotification = async () => {
     try {
-      const result = await sendTestNotification();
-      if (result) {
-        setError(null);
-      } else {
-        setError("Failed to send test notification");
+      setLoading(true);
+      setError(null);
+
+      if (!location.phoneNumbers) {
+        setError("Please enter at least one phone number");
+        return;
       }
-    } catch (error) {
-      console.error("Error sending test notification:", error);
-      setError("Error sending test notification");
+
+      // Split phone numbers by comma and remove whitespace
+      const phoneNumberList = location.phoneNumbers
+        .split(',')
+        .map(num => num.trim())
+        .filter(num => num);
+
+      if (phoneNumberList.length === 0) {
+        setError("Please enter valid phone numbers");
+        return;
+      }
+
+      // Validate phone number format
+      const invalidNumbers = phoneNumberList.filter(num => {
+        const cleaned = num.replace(/[^\d+]/g, '');
+        return cleaned.length < 10; // Basic validation for minimum length
+      });
+
+      if (invalidNumbers.length > 0) {
+        setError(`Invalid phone number format: ${invalidNumbers.join(', ')}`);
+        return;
+      }
+
+      try {
+        await sendNotification(
+          "This is a test notification from the geofence app!",
+          "Test Notification",
+          phoneNumberList
+        );
+        setError("Notification sent successfully!");
+      } catch (error) {
+        if (error instanceof Error) {
+          setError(error.message);
+        } else {
+          setError("Failed to send notification. Check console for details.");
+        }
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -234,12 +304,27 @@ const LocationForm: React.FC = () => {
             variant="outlined" 
             color="secondary" 
             onClick={testNotification}
+            disabled={!location.phoneNumbers || loading}
           >
             Test Notification
           </Button>
         </div>
 
         {error && <p className="error-message">{error}</p>}
+
+        <TextField 
+          label="Phone Numbers" 
+          value={location.phoneNumbers} 
+          onChange={(e) => setLocation((prev) => ({ 
+            ...prev, 
+            phoneNumbers: e.target.value 
+          }))} 
+          variant="outlined" 
+          fullWidth 
+          margin="normal"
+          placeholder="Enter phone numbers separated by commas"
+          helperText="Example: +1234567890, +9876543210"
+        />
 
         <TextField 
           label="Address" 

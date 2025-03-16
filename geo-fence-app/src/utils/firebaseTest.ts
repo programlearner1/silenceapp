@@ -1,4 +1,5 @@
-import { messaging, requestNotificationPermission } from '../firebase';
+import { messaging } from '../firebase';
+import { getToken } from 'firebase/messaging';
 
 export const testFirebaseSetup = async () => {
   try {
@@ -26,21 +27,39 @@ export const testFirebaseSetup = async () => {
     }
     console.log('✅ Firebase messaging initialized');
 
-    // Test 3: Request notification permission
-    const token = await requestNotificationPermission();
-    if (!token) {
-      console.error('❌ Could not get FCM token');
+    // Test 3: Request notification permission and get FCM token
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      console.error('❌ Notification permission denied');
       return false;
     }
-    console.log('✅ FCM token obtained:', token);
+    console.log('✅ Notification permission granted');
 
-    // Test 4: Check service worker registration
+    const vapidKey = process.env.REACT_APP_FIREBASE_VAPID_KEY;
+    if (!vapidKey) {
+      console.error('❌ VAPID key not configured');
+      return false;
+    }
+
+    // Get service worker registration
     const registration = await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js');
     if (!registration) {
       console.error('❌ Service worker not registered');
       return false;
     }
     console.log('✅ Service worker registered');
+
+    // Test 4: Get FCM token
+    const token = await getToken(messaging, {
+      vapidKey,
+      serviceWorkerRegistration: registration
+    });
+
+    if (!token) {
+      console.error('❌ Could not get FCM token');
+      return false;
+    }
+    console.log('✅ FCM token obtained:', token);
 
     // All tests passed
     console.log('✅ All Firebase tests passed');

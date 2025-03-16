@@ -35,44 +35,30 @@ export const getFCMToken = async () => {
   }
 };
 
-export const sendNotification = async (message: string, title: string, phoneNumbers: string[]) => {
+export const sendNotification = async (message: string, title: string) => {
   try {
-    console.log('Starting notification process...');
-    
     const token = await getFCMToken();
     if (!token) {
-      throw new Error('No FCM token available - please check browser notifications are enabled');
+      throw new Error('No FCM token available');
     }
 
-    console.log('Sending notification through backend:', {
-      token: token.substring(0, 10) + '...',
-      message,
-      title,
-      phoneNumbers
-    });
-
-    // Send notification through our backend server
-    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-    const response = await fetch(`${apiUrl}/send-notification`, {
+    const response = await fetch('/.netlify/functions/send-notification', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         token,
-        title,
         message,
-        phoneNumbers
-      })
+        title,
+      }),
     });
 
-    const data = await response.json();
-    console.log('Backend response:', data);
-
     if (!response.ok) {
-      throw new Error(`Server error (${response.status}): ${data.error || 'Unknown error'}`);
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
+    const data = await response.json();
     if (!data.success) {
       throw new Error(data.error || 'Failed to send notification');
     }
@@ -80,19 +66,15 @@ export const sendNotification = async (message: string, title: string, phoneNumb
     console.log('Notification sent successfully!');
     return true;
   } catch (error) {
-    console.error('Error sending notification:', error);
-    if (error instanceof Error) {
-      throw error;
-    }
-    throw new Error('Unknown error occurred while sending notification');
+    console.error('Error sending notification:', error instanceof Error ? error.message : 'Unknown error');
+    return false;
   }
 };
 
 // Test notification function
-export const sendTestNotification = async (phoneNumbers: string[]) => {
+export const sendTestNotification = async () => {
   return sendNotification(
     "This is a test notification from the geofence app!",
-    "Test Notification",
-    phoneNumbers
+    "Test Notification"
   );
 }; 

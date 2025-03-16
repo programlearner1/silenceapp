@@ -2,9 +2,9 @@ import React, { useEffect, useState } from "react";
 import { LocationProvider } from "./contexts/LocationContext";
 import LocationForm from "./components/LocationForm";
 import LocationList from "./components/LocationList";
-import { requestNotificationPermission } from "./firebase";
+import { messaging } from "./firebase";
+import { getToken, onMessage } from "firebase/messaging";
 import { Alert, Snackbar } from "@mui/material";
-import FCMService from "./services/fcmService";
 
 const App: React.FC = () => {
   const [notificationStatus, setNotificationStatus] = useState<{
@@ -16,23 +16,50 @@ const App: React.FC = () => {
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // Request notification permission and initialize FCM
-        await requestNotificationPermission();
+        // Register service worker and request notification permission
+        const registration = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
+        console.log("Service Worker registered with scope:", registration.scope);
         
-        // Set up message handler
-        FCMService.addMessageHandler((payload) => {
-          console.log("New notification:", payload);
-          setNotificationStatus({
-            show: true,
-            message: payload.notification?.body || 'New notification received',
-            severity: 'success'
-          });
+        const permission = await Notification.requestPermission();
+        if (permission !== "granted") {
+          throw new Error("Notification permission denied.");
+        }
+
+        // Get FCM token
+        const vapidKey = process.env.REACT_APP_FIREBASE_VAPID_KEY;
+        if (!vapidKey) {
+          throw new Error("VAPID key not configured");
+        }
+
+        const currentToken = await getToken(messaging, {
+          vapidKey,
+          serviceWorkerRegistration: registration,
         });
 
-        setNotificationStatus({
-          show: true,
-          message: 'Notifications enabled successfully!',
-          severity: 'success'
+        if (currentToken) {
+          console.log("FCM Token:", currentToken);
+          setNotificationStatus({
+            show: true,
+            message: 'Notifications enabled successfully!',
+            severity: 'success'
+          });
+        } else {
+          throw new Error("No registration token available");
+        }
+
+        // Set up message listener
+        onMessage(messaging, (payload) => {
+          console.log("New notification:", payload);
+          const title = payload.notification?.title || "New Notification";
+          const body = payload.notification?.body || "";
+          
+          new Notification(title, { body });
+          
+          setNotificationStatus({
+            show: true,
+            message: body || 'New notification received',
+            severity: 'success'
+          });
         });
       } catch (err) {
         console.error("Error in Firebase setup:", err);

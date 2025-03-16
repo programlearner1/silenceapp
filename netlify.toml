@@ -1,9 +1,15 @@
 [build]
-  base = "geo-fence-app/"
-  publish = "build/"
+  base = "geo-fence-app"
   command = "npm run build"
+  publish = "build"
+  functions = "netlify/functions"
 
 # Redirect all routes to index.html for client-side routing
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
