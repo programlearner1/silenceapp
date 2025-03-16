@@ -3,13 +3,24 @@ node_modules/
 /.pnp
 .pnp.js
 
-# Environment files
+# Environment files and secrets
 .env
+.env.*
+!.env.example
+**/serviceAccountKey.json
+**/*-firebase-adminsdk-*.json
+**/firebase-credentials.json
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
-**/serviceAccountKey.json
+.env.production
+
+# Firebase configuration files with secrets
+**/firebase-config.json
+**/firebase-service-account.json
+**/google-services.json
+**/GoogleService-Info.plist
 
 # Testing
 /coverage
@@ -18,12 +29,7 @@ node_modules/
 /build
 /dist
 
-# Misc
-.DS_Store
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# Logs
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -35,5 +41,18 @@ yarn-error.log*
 *.swp
 *.swo
 
-# Firebase service account
-location-sms-backend/phone-silencer-33c2f-firebase-adminsdk-fbsvc-dd0e8df612.json
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Mobile app specific
+**/google-services.json
+**/GoogleService-Info.plist
+**/keystore.properties
+**/*.keystore
+**/*.jks
