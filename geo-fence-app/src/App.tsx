@@ -4,25 +4,46 @@ import LocationForm from "./components/LocationForm";
 import LocationList from "./components/LocationList";
 import { messaging } from "./firebase";
 import { getToken, onMessage } from "firebase/messaging";
-import { Alert, Snackbar } from "@mui/material";
+import { Alert, Snackbar, Container, AppBar, Toolbar, Typography, Box, useTheme, useMediaQuery } from "@mui/material";
+import { LocationOn as LocationIcon } from '@mui/icons-material';
+import { motion } from 'framer-motion';
+import { sendNotification } from "./utils/sendSMS";
+import NotificationTest from './components/NotificationTest';
+import './App.css';
+
+interface Location {
+  address: string;
+  latitude: number;
+  longitude: number;
+  radius: number;
+  silence: boolean;
+  message: string;
+  messageSent: boolean;
+  phoneNumbers: string;
+}
 
 const App: React.FC = () => {
+  const [locations, setLocations] = useState<Location[]>([]);
   const [notificationStatus, setNotificationStatus] = useState<{
     show: boolean;
     message: string;
     severity: 'success' | 'error';
   }>({ show: false, message: '', severity: 'success' });
 
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // Register service worker and request notification permission
-        const registration = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
-        console.log("Service Worker registered with scope:", registration.scope);
-        
+        if (!messaging) {
+          throw new Error("Firebase messaging not initialized");
+        }
+
+        // Request notification permission
         const permission = await Notification.requestPermission();
         if (permission !== "granted") {
-          throw new Error("Notification permission denied.");
+          throw new Error("Notification permission denied");
         }
 
         // Get FCM token
@@ -31,9 +52,13 @@ const App: React.FC = () => {
           throw new Error("VAPID key not configured");
         }
 
+        // Register service worker
+        const registration = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
+        console.log("Service Worker registered with scope:", registration.scope);
+
         const currentToken = await getToken(messaging, {
           vapidKey,
-          serviceWorkerRegistration: registration,
+          serviceWorkerRegistration: registration
         });
 
         if (currentToken) {
@@ -65,7 +90,7 @@ const App: React.FC = () => {
         console.error("Error in Firebase setup:", err);
         setNotificationStatus({
           show: true,
-          message: 'Error setting up notifications. Check console for details.',
+          message: err instanceof Error ? err.message : 'Error setting up notifications',
           severity: 'error'
         });
       }
@@ -74,16 +99,93 @@ const App: React.FC = () => {
     initializeApp();
   }, []);
 
+  // Load saved locations on component mount
+  useEffect(() => {
+    const savedLocations = localStorage.getItem("locations");
+    if (savedLocations) {
+      setLocations(JSON.parse(savedLocations));
+    }
+  }, []);
+
+  // Handle location updates from LocationForm
+  const handleLocationUpdate = (updatedLocations: Location[]) => {
+    setLocations(updatedLocations);
+    localStorage.setItem("locations", JSON.stringify(updatedLocations));
+  };
+
+  // Delete location
+  const handleDelete = (index: number) => {
+    const updatedLocations = locations.filter((_, i) => i !== index);
+    setLocations(updatedLocations);
+    localStorage.setItem("locations", JSON.stringify(updatedLocations));
+  };
+
+  // Edit location
+  const handleEdit = (location: Location, index: number) => {
+    // You can implement edit functionality here
+    console.log("Editing location:", location, "at index:", index);
+  };
+
+  // Send notification for a specific location
+  const handleNotify = async (location: Location) => {
+    try {
+      const phoneNumbers = location.phoneNumbers.split(',').map(num => num.trim());
+      await sendNotification(
+        location.message || "You have entered the geofence zone",
+        `Location Alert: ${location.address}`,
+        phoneNumbers
+      );
+      setNotificationStatus({
+        show: true,
+        message: 'Test notification sent successfully!',
+        severity: 'success'
+      });
+    } catch (error) {
+      setNotificationStatus({
+        show: true,
+        message: error instanceof Error ? error.message : 'Failed to send notification',
+        severity: 'error'
+      });
+    }
+  };
+
   return (
     <LocationProvider>
-      <div className="container mx-auto p-4">
-        <h1 className="text-3xl font-bold mb-4">GeoFence App</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <LocationForm />
-            <LocationList />
-          </div>
-        </div>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        <AppBar position="static" color="primary" elevation={0}>
+          <Toolbar>
+            <LocationIcon sx={{ mr: 2 }} />
+            <Typography variant="h6" component="div">
+              GeoFence App
+            </Typography>
+          </Toolbar>
+        </AppBar>
+
+        <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+          <Box sx={{ 
+            display: 'grid', 
+            gap: 4,
+            gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+          }}>
+            <Box>
+              <LocationForm onLocationUpdate={handleLocationUpdate} />
+              <NotificationTest />
+            </Box>
+            <Box>
+              <LocationList 
+                locations={locations}
+                onDelete={handleDelete}
+                onEdit={handleEdit}
+                onNotify={handleNotify}
+              />
+            </Box>
+          </Box>
+        </Container>
+
         <Snackbar 
           open={notificationStatus.show} 
           autoHideDuration={6000} 
@@ -96,7 +198,7 @@ const App: React.FC = () => {
             {notificationStatus.message}
           </Alert>
         </Snackbar>
-      </div>
+      </motion.div>
     </LocationProvider>
   );
 };

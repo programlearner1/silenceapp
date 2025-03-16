@@ -40,10 +40,12 @@ try {
   }
 
   // Replace each placeholder with its value
+  let updatedContent = swContent;
   Object.entries(envVars).forEach(([key, value]) => {
     const placeholder = `%${key}%`;
-    if (swContent.includes(placeholder)) {
-      swContent = swContent.replace(placeholder, value);
+    const regex = new RegExp(placeholder, 'g');
+    if (updatedContent.includes(placeholder)) {
+      updatedContent = updatedContent.replace(regex, value);
       console.log(`✅ Replaced ${key}`);
     } else {
       console.warn(`⚠️ Placeholder for ${key} not found in service worker`);
@@ -52,7 +54,7 @@ try {
 
   // Write the processed service worker
   try {
-    fs.writeFileSync(swPath, swContent);
+    fs.writeFileSync(swPath, updatedContent);
     console.log('✅ Service worker configuration updated successfully');
   } catch (error) {
     console.error('❌ Error writing service worker file:', error);

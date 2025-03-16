@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getMessaging, getToken, onMessage } from "firebase/messaging";
+import { getMessaging } from "firebase/messaging";
 
 // Validate Firebase configuration
 const validateFirebaseConfig = (config) => {
@@ -12,15 +12,9 @@ const validateFirebaseConfig = (config) => {
     'appId'
   ];
 
-  for (const field of requiredFields) {
-    if (!config[field]) {
-      throw new Error(`Missing Firebase configuration field: ${field}`);
-    }
-  }
-
-  // Validate API key format
-  if (!config.apiKey.startsWith('AIza')) {
-    throw new Error('Invalid Firebase API key format');
+  const missingFields = requiredFields.filter(field => !config[field]);
+  if (missingFields.length > 0) {
+    throw new Error(`Missing required Firebase configuration fields: ${missingFields.join(', ')}`);
   }
 };
 
@@ -34,13 +28,17 @@ const firebaseConfig = {
   measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID
 };
 
-// Initialize Firebase
-let app;
 let messaging = null;
 
 try {
+  // Log Firebase config for debugging (remove in production)
+  console.log('Firebase Config:', {
+    ...firebaseConfig,
+    apiKey: firebaseConfig.apiKey ? '**********' : undefined
+  });
+
   validateFirebaseConfig(firebaseConfig);
-  app = initializeApp(firebaseConfig);
+  const app = initializeApp(firebaseConfig);
   
   // Initialize Firebase Cloud Messaging
   if ('serviceWorker' in navigator) {
@@ -53,4 +51,4 @@ try {
   console.error('❌ Firebase initialization error:', error);
 }
 
-export { messaging, getToken, onMessage };
+export { messaging };
