@@ -1,17 +1,25 @@
 const admin = require('firebase-admin');
-const path = require('path');
-
-// Get the absolute path to the service account file
-const serviceAccountPath = path.join(__dirname, 'phone-silencer-33c2f-firebase-adminsdk-fbsvc-dd0e8df612.json');
+require('dotenv').config();
 
 try {
+  // Initialize Firebase Admin with credentials from environment variable
+  if (!process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
+    throw new Error('FIREBASE_SERVICE_ACCOUNT_BASE64 environment variable is not set');
+  }
+
+  // Decode the base64 service account string
+  const serviceAccount = JSON.parse(
+    Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString()
+  );
+
   admin.initializeApp({
-    credential: admin.credential.cert(serviceAccountPath)
+    credential: admin.credential.cert(serviceAccount)
   });
+
   console.log('✅ Firebase Admin SDK initialized successfully');
 } catch (error) {
   console.error('❌ Error initializing Firebase Admin SDK:', error);
-  throw error;
+  // Don't exit process, let the server handle the error gracefully
 }
 
 module.exports = admin; 
