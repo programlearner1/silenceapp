@@ -30,3 +30,6 @@ yarn-error.log*
 # IDE
 .idea/
 .vscode/
+
+# Firebase service account
+location-sms-backend/phone-silencer-33c2f-firebase-adminsdk-fbsvc-dd0e8df612.json
