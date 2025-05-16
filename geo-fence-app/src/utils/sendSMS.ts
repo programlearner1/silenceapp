@@ -1,10 +1,10 @@
-// Add this at the top of the file to suppress TS errors for process.env in CRA
+import { getToken } from 'firebase/messaging';
+import { messaging } from '../firebase';
+
+// Add this after imports to suppress TS errors for process.env in CRA
 // @ts-ignore
 // eslint-disable-next-line no-var
 var process: { env: { [key: string]: string | undefined } };
-
-import { getToken } from 'firebase/messaging';
-import { messaging } from '../firebase';
 
 interface NotificationPreferences {
   locationAlerts: boolean;
