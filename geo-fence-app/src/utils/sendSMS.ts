@@ -1,3 +1,8 @@
+// Add this at the top of the file to suppress TS errors for process.env in CRA
+// @ts-ignore
+// eslint-disable-next-line no-var
+var process: { env: { [key: string]: string | undefined } };
+
 import { getToken } from 'firebase/messaging';
 import { messaging } from '../firebase';
 
@@ -8,11 +13,14 @@ interface NotificationPreferences {
   vibration: boolean;
 }
 
+// Use import.meta.env for Vite/CRA compatibility
+const VAPID_KEY = process.env.REACT_APP_FIREBASE_VAPID_KEY;
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
 // Get FCM token and register device
 export const registerDevice = async (phoneNumber: string) => {
   try {
-    const vapidKey = process.env.REACT_APP_FIREBASE_VAPID_KEY;
-    if (!vapidKey) {
+    if (!VAPID_KEY) {
       throw new Error('VAPID key is not configured');
     }
 
@@ -27,7 +35,7 @@ export const registerDevice = async (phoneNumber: string) => {
     }
 
     const deviceToken = await getToken(messaging, {
-      vapidKey: vapidKey
+      vapidKey: VAPID_KEY
     });
 
     if (!deviceToken) {
@@ -35,8 +43,7 @@ export const registerDevice = async (phoneNumber: string) => {
     }
 
     // Register device with backend
-    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-    const response = await fetch(`${apiUrl}/register-device`, {
+    const response = await fetch(`${API_URL}/register-device`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -63,8 +70,7 @@ export const registerDevice = async (phoneNumber: string) => {
 // Subscribe to notification topics
 export const subscribeToTopic = async (userId: string, topic: string) => {
   try {
-    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-    const response = await fetch(`${apiUrl}/subscribe-topic`, {
+    const response = await fetch(`${API_URL}/subscribe-topic`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -105,8 +111,7 @@ export const sendNotification = async (
     // Clean phone numbers
     const cleanPhoneNumbers = phoneNumbers.map(num => num.replace(/[^\d+]/g, ''));
 
-    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-    const response = await fetch(`${apiUrl}/send-notification`, {
+    const response = await fetch(`${API_URL}/send-notification`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
