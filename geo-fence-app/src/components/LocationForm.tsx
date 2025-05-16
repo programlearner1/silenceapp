@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { 
   Button, 
   TextField, 
@@ -74,14 +74,14 @@ const LocationForm: React.FC<LocationFormProps> = ({ onLocationUpdate }) => {
     triggerOnce: true
   });
 
-  const loadLocations = () => {
+  const loadLocations = useCallback(() => {
     const storedLocations = localStorage.getItem("locations");
     if (storedLocations) {
       const parsedLocations = JSON.parse(storedLocations);
       setLocations(parsedLocations);
       onLocationUpdate(parsedLocations);
     }
-  };
+  }, [onLocationUpdate]);
 
   const fetchAddress = async (lat: number, lng: number) => {
     try {
@@ -152,7 +152,7 @@ const LocationForm: React.FC<LocationFormProps> = ({ onLocationUpdate }) => {
     return R * c;
   };
 
-  const checkUserLocation = (currentLat: number, currentLng: number) => {
+  const checkUserLocation = useCallback((currentLat: number, currentLng: number) => {
     locations.forEach((loc) => {
       const distance = getDistanceFromLatLonInMeters(
         currentLat,
@@ -184,7 +184,7 @@ const LocationForm: React.FC<LocationFormProps> = ({ onLocationUpdate }) => {
         localStorage.setItem("locations", JSON.stringify(locations));
       }
     });
-  };
+  }, [locations]);
 
   const handleMarkerDragEnd = (e: any) => {
     const { lat, lng } = e.target.getLatLng();

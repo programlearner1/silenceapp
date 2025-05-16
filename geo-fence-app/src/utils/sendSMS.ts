@@ -6,13 +6,6 @@ import { messaging } from '../firebase';
 // eslint-disable-next-line no-var
 var process: { env: { [key: string]: string | undefined } };
 
-interface NotificationPreferences {
-  locationAlerts: boolean;
-  silentMode: boolean;
-  notificationSound: boolean;
-  vibration: boolean;
-}
-
 // Use import.meta.env for Vite/CRA compatibility
 const VAPID_KEY = process.env.REACT_APP_FIREBASE_VAPID_KEY;
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';

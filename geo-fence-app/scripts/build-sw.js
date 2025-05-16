@@ -14,7 +14,7 @@ try {
     process.exit(1);
   }
 
-  // Replace placeholders with actual environment variables
+  // List all required Firebase env vars
   const envVars = {
     REACT_APP_FIREBASE_API_KEY: process.env.REACT_APP_FIREBASE_API_KEY,
     REACT_APP_FIREBASE_AUTH_DOMAIN: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
@@ -35,7 +35,7 @@ try {
     missingVars.forEach(variable => {
       console.error(`   - ${variable}`);
     });
-    console.error('\nMake sure these variables are set in your .env file or environment');
+    console.error('\nMake sure these variables are set in your .env file or Netlify environment settings.');
     process.exit(1);
   }
 
