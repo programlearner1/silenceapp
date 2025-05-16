@@ -74,30 +74,6 @@ const LocationForm: React.FC<LocationFormProps> = ({ onLocationUpdate }) => {
     triggerOnce: true
   });
 
-  // Load saved locations on component mount
-  useEffect(() => {
-    loadLocations();
-  }, []);
-
-  // Location watcher effect
-  useEffect(() => {
-    const locationWatcher = setInterval(() => {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          checkUserLocation(latitude, longitude);
-        },
-        (error) => {
-          console.error("Error getting location:", error);
-          toast.error("Could not get current location");
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-      );
-    }, 600000);
-  
-    return () => clearInterval(locationWatcher);
-  }, [locations]);
-  
   const loadLocations = () => {
     const storedLocations = localStorage.getItem("locations");
     if (storedLocations) {
@@ -316,6 +292,28 @@ const LocationForm: React.FC<LocationFormProps> = ({ onLocationUpdate }) => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadLocations();
+  }, [loadLocations]);
+
+  useEffect(() => {
+    const locationWatcher = setInterval(() => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          checkUserLocation(latitude, longitude);
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+          toast.error("Could not get current location");
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    }, 600000);
+
+    return () => clearInterval(locationWatcher);
+  }, [locations, checkUserLocation]);
 
   return (
     <motion.div 
