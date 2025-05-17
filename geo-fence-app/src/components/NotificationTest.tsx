@@ -8,7 +8,7 @@ import {
   CircularProgress
 } from '@mui/material';
 import { NotificationsActive as NotificationsIcon } from '@mui/icons-material';
-import { registerDevice, sendTestNotification } from '../utils/sendSMS';
+import { getFCMToken, sendTestNotification } from '../utils/sendSMS';
 import { toast } from 'react-toastify';
 
 const NotificationTest: React.FC = () => {
@@ -23,8 +23,12 @@ const NotificationTest: React.FC = () => {
 
     setLoading(true);
     try {
-      await registerDevice(phoneNumber);
-      toast.success('Device registered successfully!');
+      const token = await getFCMToken();
+      if (token) {
+        toast.success('Device registered successfully!');
+      } else {
+        throw new Error('Failed to get FCM token');
+      }
     } catch (error) {
       console.error('Registration error:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to register device');
@@ -41,7 +45,7 @@ const NotificationTest: React.FC = () => {
 
     setLoading(true);
     try {
-      await sendTestNotification(phoneNumber);
+      await sendTestNotification();
       toast.success('Test notification sent successfully!');
     } catch (error) {
       console.error('Notification error:', error);

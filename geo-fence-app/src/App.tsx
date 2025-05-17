@@ -27,8 +27,8 @@ const App: React.FC = () => {
   const [notificationStatus, setNotificationStatus] = useState<{
     show: boolean;
     message: string;
-    severity: 'success' | 'error';
-  }>({ show: false, message: '', severity: 'success' });
+    type: 'success' | 'error';
+  }>({ show: false, message: '', type: 'success' });
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -66,7 +66,7 @@ const App: React.FC = () => {
           setNotificationStatus({
             show: true,
             message: 'Notifications enabled successfully!',
-            severity: 'success'
+            type: 'success'
           });
         } else {
           throw new Error("No registration token available");
@@ -83,7 +83,7 @@ const App: React.FC = () => {
           setNotificationStatus({
             show: true,
             message: body || 'New notification received',
-            severity: 'success'
+            type: 'success'
           });
         });
       } catch (err) {
@@ -91,7 +91,7 @@ const App: React.FC = () => {
         setNotificationStatus({
           show: true,
           message: err instanceof Error ? err.message : 'Error setting up notifications',
-          severity: 'error'
+          type: 'error'
         });
       }
     };
@@ -129,22 +129,20 @@ const App: React.FC = () => {
   // Send notification for a specific location
   const handleNotify = async (location: Location) => {
     try {
-      const phoneNumbers = location.phoneNumbers.split(',').map(num => num.trim());
       await sendNotification(
         location.message || "You have entered the geofence zone",
-        `Location Alert: ${location.address}`,
-        phoneNumbers
+        `Location Alert: ${location.address}`
       );
       setNotificationStatus({
         show: true,
-        message: 'Test notification sent successfully!',
-        severity: 'success'
+        message: "Notification sent successfully!",
+        type: "success"
       });
     } catch (error) {
       setNotificationStatus({
         show: true,
-        message: error instanceof Error ? error.message : 'Failed to send notification',
-        severity: 'error'
+        message: "Failed to send notification",
+        type: "error"
       });
     }
   };
@@ -192,7 +190,7 @@ const App: React.FC = () => {
           onClose={() => setNotificationStatus(prev => ({ ...prev, show: false }))}
         >
           <Alert 
-            severity={notificationStatus.severity} 
+            severity={notificationStatus.type} 
             onClose={() => setNotificationStatus(prev => ({ ...prev, show: false }))}
           >
             {notificationStatus.message}

@@ -192,6 +192,19 @@ const LocationForm: React.FC<LocationFormProps> = ({ onLocationUpdate }) => {
     fetchAddress(lat, lng);
   };
 
+  const testNotification = async () => {
+    try {
+      await sendNotification(
+        "This is a test notification from the geofence app!",
+        "Test Notification"
+      );
+      
+      setSuccess("Test notification sent successfully!");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Failed to send test notification");
+    }
+  };
+
   const saveLocation = () => {
     if (!location.latitude || !location.longitude) {
       toast.error("Location coordinates are required");
@@ -227,6 +240,17 @@ const LocationForm: React.FC<LocationFormProps> = ({ onLocationUpdate }) => {
       setSuccess("Location saved successfully!");
       toast.success("Location saved successfully!");
 
+      // Send notification for the new location
+      sendNotification(
+        newLocation.message || "You have entered a geofence zone",
+        `Entered ${newLocation.address || 'Geofence Zone'}`
+      ).then(() => {
+        newLocation.messageSent = true;
+        localStorage.setItem("locations", JSON.stringify(updatedLocations));
+      }).catch(error => {
+        console.error("Failed to send notification:", error);
+      });
+
       // Reset the form
       setLocation({
         latitude: 0,
@@ -241,55 +265,6 @@ const LocationForm: React.FC<LocationFormProps> = ({ onLocationUpdate }) => {
     } catch (error) {
       console.error("Error saving location:", error);
       toast.error("Error saving location");
-    }
-  };
-
-  const testNotification = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      if (!location.phoneNumbers) {
-        toast.error("Please enter at least one phone number");
-        return;
-      }
-
-      const phoneNumberList = location.phoneNumbers
-        .split(',')
-        .map(num => num.trim())
-        .filter(num => num);
-
-      if (phoneNumberList.length === 0) {
-        toast.error("Please enter valid phone numbers");
-        return;
-      }
-
-      const invalidNumbers = phoneNumberList.filter(num => {
-        const cleaned = num.replace(/[^\d+]/g, '');
-        return cleaned.length < 10;
-      });
-
-      if (invalidNumbers.length > 0) {
-        toast.error(`Invalid phone numbers: ${invalidNumbers.join(', ')}`);
-        return;
-      }
-
-      await sendNotification(
-        "This is a test notification from the geofence app!",
-        "Test Notification",
-        phoneNumberList
-      );
-      
-      setSuccess("Test notification sent successfully!");
-      toast.success("Test notification sent successfully!");
-    } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message);
-      } else {
-        toast.error("Failed to send notification");
-      }
-    } finally {
-      setLoading(false);
     }
   };
 

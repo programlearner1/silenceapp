@@ -40,7 +40,7 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    const { token, title, message } = JSON.parse(event.body);
+    const { token, title, message, phoneNumbers } = JSON.parse(event.body);
 
     if (!token) {
       return {
@@ -60,6 +60,7 @@ exports.handler = async (event, context) => {
         body: message || "You have entered a geofence zone"
       },
       token: token,
+      data: phoneNumbers ? { phoneNumbers: JSON.stringify(phoneNumbers) } : undefined,
       webpush: {
         notification: {
           icon: '/firebase-logo.png',
