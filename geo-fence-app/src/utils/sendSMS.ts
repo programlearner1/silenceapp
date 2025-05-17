@@ -9,9 +9,13 @@ export const getFCMToken = async () => {
       throw new Error('VAPID key is not configured');
     }
 
-    // Request notification permission if not granted
+    // Check if notifications are denied before requesting
     if (!('Notification' in window)) {
       throw new Error('This browser does not support notifications');
+    }
+    if (Notification.permission === 'denied') {
+      console.error('Notification permission has been denied by the user.');
+      return null;
     }
 
     const permission = await Notification.requestPermission();

@@ -43,7 +43,12 @@ const App: React.FC = () => {
         // Request notification permission
         const permission = await Notification.requestPermission();
         if (permission !== "granted") {
-          throw new Error("Notification permission denied");
+          setNotificationStatus({
+            show: true,
+            message: "You need to allow notifications in your browser settings for this feature to work.",
+            type: "error"
+          });
+          return; // Stop further setup if permission is denied
         }
 
         // Get FCM token
