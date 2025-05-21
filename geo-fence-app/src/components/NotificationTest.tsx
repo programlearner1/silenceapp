@@ -45,8 +45,12 @@ const NotificationTest: React.FC = () => {
 
     setLoading(true);
     try {
-      await sendTestNotification();
-      toast.success('Test notification sent successfully!');
+      const result = await sendTestNotification();
+      if (result) {
+        toast.success('Test notification sent successfully!');
+      } else {
+        toast.error('Failed to send notification');
+      }
     } catch (error) {
       console.error('Notification error:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to send notification');

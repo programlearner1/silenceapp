@@ -46,7 +46,7 @@ export const sendNotification = async (message: string, title: string, phoneNumb
       throw new Error('No FCM token available');
     }
 
-    const response = await fetch('/.netlify/functions/send-notification', {
+    const response = await fetch('/api/send-notification', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

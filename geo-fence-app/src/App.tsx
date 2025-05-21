@@ -29,9 +29,36 @@ const App: React.FC = () => {
     message: string;
     type: 'success' | 'error';
   }>({ show: false, message: '', type: 'success' });
+  const [serviceWorkerRegistration, setServiceWorkerRegistration] = useState<ServiceWorkerRegistration | null>(null);
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+  // Request notification permission and register service worker
+  const requestNotificationPermission = async () => {
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        console.log('Notification permission granted');
+        
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+          const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+          console.log('Service Worker registered:', registration);
+          setServiceWorkerRegistration(registration);
+        }
+      } else {
+        console.log('Notification permission denied');
+      }
+    } catch (error) {
+      console.error('Error requesting notification permission:', error);
+    }
+  };
+
+  // Call this function when your app initializes
+  useEffect(() => {
+    requestNotificationPermission();
+  }, []);
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -40,30 +67,19 @@ const App: React.FC = () => {
           throw new Error("Firebase messaging not initialized");
         }
 
-        // Request notification permission
-        const permission = await Notification.requestPermission();
-        if (permission !== "granted") {
-          setNotificationStatus({
-            show: true,
-            message: "You need to allow notifications in your browser settings for this feature to work.",
-            type: "error"
-          });
-          return; // Stop further setup if permission is denied
-        }
-
         // Get FCM token
         const vapidKey = process.env.REACT_APP_FIREBASE_VAPID_KEY;
         if (!vapidKey) {
           throw new Error("VAPID key not configured");
         }
 
-        // Register service worker
-        const registration = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
-        console.log("Service Worker registered with scope:", registration.scope);
+        if (!serviceWorkerRegistration) {
+          throw new Error("Service worker not registered");
+        }
 
         const currentToken = await getToken(messaging, {
           vapidKey,
-          serviceWorkerRegistration: registration
+          serviceWorkerRegistration
         });
 
         if (currentToken) {
@@ -101,8 +117,10 @@ const App: React.FC = () => {
       }
     };
 
-    initializeApp();
-  }, []);
+    if (serviceWorkerRegistration) {
+      initializeApp();
+    }
+  }, [serviceWorkerRegistration]);
 
   // Load saved locations on component mount
   useEffect(() => {

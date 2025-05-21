@@ -28,6 +28,7 @@ const firebaseConfig = {
   measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID
 };
 
+const app = initializeApp(firebaseConfig);
 let messaging = null;
 
 try {
@@ -38,7 +39,6 @@ try {
   });
 
   validateFirebaseConfig(firebaseConfig);
-  const app = initializeApp(firebaseConfig);
   
   // Initialize Firebase Cloud Messaging
   if ('serviceWorker' in navigator) {
@@ -47,8 +47,10 @@ try {
   } else {
     console.warn('⚠️ Service workers are not supported by this browser');
   }
+
+  console.log("API KEY:", process.env.REACT_APP_FIREBASE_API_KEY);
 } catch (error) {
   console.error('❌ Firebase initialization error:', error);
 }
 
-export { messaging };
+export { app, messaging };

@@ -1,15 +1,14 @@
-importScripts("https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js");
-importScripts("https://www.gstatic.com/firebasejs/10.8.1/firebase-messaging-compat.js");
+importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js');
 
 // Firebase configuration will be injected during build time
 const firebaseConfig = {
-  apiKey: "AIzaSyCRhcD6DjPKUwmgEM42YTwQj-dJusatXlQ",
-  authDomain: "phone-silencer-33c2f.firebaseapp.com",
-  projectId: "phone-silencer-33c2f",
-  storageBucket: "phone-silencer-33c2f.appspot.com",
-  messagingSenderId: "238705445203",
-  appId: "1:238705445203:web:d91bda613a6fa1ccc979a6",
-  measurementId: "G-9NGTZ446ES"
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_STORAGE_BUCKET",
+  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
 
 try {
@@ -18,29 +17,15 @@ try {
 
   // Handle background messages
   messaging.onBackgroundMessage((payload) => {
-    console.log('[Service Worker] Received background message:', payload);
+    console.log('Received background message:', payload);
 
-    try {
-      const notificationTitle = payload.notification?.title || 'Location Alert';
-      const notificationOptions = {
-        body: payload.notification?.body || 'You have entered a geofence zone',
-        icon: '/firebase-logo.png',
-        badge: '/firebase-logo.png',
-        vibrate: [100, 50, 100],
-        requireInteraction: true,
-        data: payload.data,
-        actions: [
-          {
-            action: 'view',
-            title: 'View'
-          }
-        ]
-      };
+    const notificationTitle = payload.notification.title;
+    const notificationOptions = {
+      body: payload.notification.body,
+      icon: '/firebase-logo.png'
+    };
 
-      self.registration.showNotification(notificationTitle, notificationOptions);
-    } catch (error) {
-      console.error('[Service Worker] Error showing notification:', error);
-    }
+    self.registration.showNotification(notificationTitle, notificationOptions);
   });
 
   // Handle notification click

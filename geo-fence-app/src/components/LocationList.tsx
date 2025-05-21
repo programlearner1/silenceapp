@@ -97,8 +97,8 @@ const LocationList: React.FC<LocationListProps> = ({
                     </Typography>
                   }
                   secondary={
-                    <Box component="div">
-                      <Box component="div" className="location-details">
+                    <Box component="span">
+                      <Box component="span" className="location-details">
                         <Chip
                           size="small"
                           label={`${location.radius}m radius`}
@@ -120,7 +120,7 @@ const LocationList: React.FC<LocationListProps> = ({
                       <Typography
                         variant="body2"
                         color="textSecondary"
-                        component="div"
+                        component="span"
                         className="phone-numbers"
                       >
                         📱 {location.phoneNumbers}

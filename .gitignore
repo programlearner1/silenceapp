@@ -56,3 +56,6 @@ Thumbs.db
 **/keystore.properties
 **/*.keystore
 **/*.jks
+
+# Local Netlify folder
+.netlify

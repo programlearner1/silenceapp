@@ -5,5 +5,8 @@
   "dependencies": {
     "cors": "^2.8.5",
     "firebase-admin": "^13.2.0"
+  },
+  "scripts": {
+    "start": "netlify dev"
   }
 }

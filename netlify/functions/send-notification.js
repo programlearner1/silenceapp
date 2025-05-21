@@ -1,12 +1,11 @@
 const admin = require('firebase-admin');
 
-// Initialize Firebase Admin
-let serviceAccount;
-try {
-  serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-} catch (error) {
-  console.error('Error parsing service account:', error);
+// Read and decode the base64-encoded service account JSON
+const serviceAccountBase64 = process.env.FIREBASE_SERVICE_ACCOUNT;
+if (!serviceAccountBase64) {
+  throw new Error('FIREBASE_SERVICE_ACCOUNT environment variable is not set.');
 }
+const serviceAccount = JSON.parse(Buffer.from(serviceAccountBase64, 'base64').toString('utf8'));
 
 if (!admin.apps.length) {
   admin.initializeApp({
@@ -15,88 +14,56 @@ if (!admin.apps.length) {
 }
 
 exports.handler = async (event, context) => {
-  // Enable CORS
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS'
-  };
-
-  // Handle preflight request
+  // Handle CORS
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
-      headers,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS'
+      },
       body: ''
     };
   }
 
-  if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      headers,
-      body: JSON.stringify({ error: 'Method not allowed' })
-    };
-  }
-
   try {
-    const { token, title, message, phoneNumbers } = JSON.parse(event.body);
+    const { token, title, body, data } = JSON.parse(event.body);
 
     if (!token) {
       return {
         statusCode: 400,
-        headers,
-        body: JSON.stringify({ 
-          success: false, 
-          error: "FCM token is required" 
-        })
+        body: JSON.stringify({ error: 'FCM token is required' })
       };
     }
 
-    // Create the notification message
-    const notificationMessage = {
+    const message = {
       notification: {
-        title: title || "Location Alert",
-        body: message || "You have entered a geofence zone"
+        title,
+        body
       },
-      token: token,
-      data: phoneNumbers ? { phoneNumbers: JSON.stringify(phoneNumbers) } : undefined,
-      webpush: {
-        notification: {
-          icon: '/firebase-logo.png',
-          badge: '/firebase-logo.png',
-          vibrate: [100, 50, 100],
-          requireInteraction: true,
-          actions: [
-            {
-              action: 'view',
-              title: 'View'
-            }
-          ]
-        },
-        fcmOptions: {
-          link: '/'
-        }
-      }
+      data: data || {},
+      token
     };
 
-    const response = await admin.messaging().send(notificationMessage);
+    const response = await admin.messaging().send(message);
+    console.log('Successfully sent message:', response);
+
     return {
       statusCode: 200,
-      headers,
+      headers: {
+        'Access-Control-Allow-Origin': '*'
+      },
       body: JSON.stringify({ success: true, messageId: response })
     };
-
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error sending notification:', error);
     return {
       statusCode: 500,
-      headers,
-      body: JSON.stringify({ 
-        success: false, 
-        error: error.message,
-        errorCode: error.code 
-      })
+      headers: {
+        'Access-Control-Allow-Origin': '*'
+      },
+      body: JSON.stringify({ error: error.message })
     };
   }
 }; 
